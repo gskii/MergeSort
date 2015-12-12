@@ -115,8 +115,13 @@ public class AsyncMergeSort {
                 task = master.getTask();
                 if (task != null) {
                     master.retTask(task.execute());
+                } else {
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        return;
+                    }
                 }
-                Thread.yield();
             }
         }
     }
@@ -129,7 +134,7 @@ public class AsyncMergeSort {
             array[i] = random.nextInt(10000);
         }
         long time = System.currentTimeMillis();
-        array = new AsyncMergeSort(array, 1).sort();
+        array = new AsyncMergeSort(array, 4).sort();
         System.out.println(System.currentTimeMillis() - time);
 //        System.out.println(Arrays.deepToString(array));
     }
