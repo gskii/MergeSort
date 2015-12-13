@@ -3,26 +3,37 @@ package ru.nntu.mergesort.byarray;
 /**
  * Created by gorbatovskiy on 13.12.15.
  */
-public class SyncMergeSort {
+public class AsyncMergeSort implements Runnable {
     private int[] array;
     private int start;
     private int end;
+    private int level;
 
-    public SyncMergeSort(int[] array, int start, int end) {
+    public AsyncMergeSort(int[] array, int start, int end, int level) {
+        this.level = level;
         this.array = array;
         this.start = start;
         this.end = end;
     }
 
-    public void sort() {
+    public void sort() throws InterruptedException {
         sort(start, end);
     }
 
-    public void sort(int left, int right) {
+    public void sort(int left, int right) throws InterruptedException {
         if (right - left > 1) {
             int middle = (right + left) / 2;
-            sort(left, middle);
-            sort(middle, right);
+            if (--level > 0) {
+                Thread lTread = new Thread(new AsyncMergeSort(array, left, middle, level));
+                Thread rTread = new Thread(new AsyncMergeSort(array, middle, right, level));
+                lTread.start();
+                rTread.start();
+                lTread.join();
+                rTread.join();
+            } else {
+                sort(left, middle);
+                sort(middle, right);
+            }
             merge(left, middle, right);
         }
     }
@@ -54,8 +65,17 @@ public class SyncMergeSort {
             array[left + i] = temp[i];           // временного хранилища
     }
 
+    @Override
+    public void run() {
+        try {
+            sort(start, end);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
     public static void main(String[] args) throws InterruptedException {
-        System.out.println("Sync merge sort");
+        System.out.println("Async merge sort");
         int length = 10_000_000;
         int[] array = new int[length];
         for (int i = 0; i < length; i++) {
@@ -63,14 +83,14 @@ public class SyncMergeSort {
         }
 
         long time = System.currentTimeMillis();
-        new SyncMergeSort(array, 0, array.length).sort();
+        new AsyncMergeSort(array, 0, array.length, 3).sort();
         System.out.println(System.currentTimeMillis() - time);
 
         for (int i = 1; i < length; i++) {
             if (array[i] < array[i - 1]) {
-                System.out.println("Bad sort at: " + array[i - 1] + " " + array[i]);
+                System.out.println("Bad sort");
+                break;
             }
         }
-
     }
 }
